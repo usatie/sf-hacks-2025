@@ -72,6 +72,19 @@ npm run dev
 # The frontend will be available at http://localhost:3000
 ```
 
+### Configuration
+
+#### Backend API URL
+
+By default, the frontend connects to the backend API at `http://localhost:5000/api`. If your backend is running on a different port or host, you can configure this by creating a `.env.local` file in the frontend directory:
+
+```bash
+# frontend/.env.local
+NEXT_PUBLIC_API_URL=http://localhost:8000/api
+```
+
+The application will automatically use this URL for all API requests.
+
 ## Contributing
 
 This project is under active development. If you'd like to contribute, please contact the project maintainers.

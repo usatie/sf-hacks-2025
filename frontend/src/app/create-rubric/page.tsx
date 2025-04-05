@@ -14,38 +14,21 @@ export default function CreateRubric() {
     setError(null);
 
     try {
-      // This would be replaced with a real API call
-      const mockResponse = {
-        title: "Auto-generated Rubric",
-        total_points: 100,
-        criteria: [
-          {
-            name: "Question 1",
-            points: 25,
-            description: "Correctly explains key concept"
-          },
-          {
-            name: "Question 2",
-            points: 25,
-            description: "Shows proper problem-solving approach"
-          },
-          {
-            name: "Question 3",
-            points: 25,
-            description: "Implements solution correctly"
-          },
-          {
-            name: "Overall",
-            points: 25,
-            description: "Organization and clarity"
-          }
-        ]
-      };
+      // Call our internal API route
+      const response = await fetch('/api/generate-rubric', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: assignmentContent }),
+      });
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setRubric(mockResponse);
+      if (!response.ok) {
+        throw new Error('Failed to generate rubric');
+      }
+
+      const data = await response.json();
+      setRubric(data);
     } catch (err) {
       setError('Failed to generate rubric. Please try again.');
       console.error(err);

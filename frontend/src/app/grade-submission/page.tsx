@@ -22,38 +22,54 @@ export default function GradeSubmission() {
     setError(null);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock response
-      const mockGrading = {
-        total_score: 85,
-        criteria_scores: [
+      // For demo purposes, we'll use a mock rubric since we're not actually
+      // retrieving one from the database yet
+      const mockRubric = {
+        title: "Auto-generated Rubric",
+        total_points: 100,
+        criteria: [
           {
             name: "Question 1",
-            score: 20,
-            feedback: "Good explanation but missing some details."
+            points: 25,
+            description: "Correctly explains key concept"
           },
           {
             name: "Question 2",
-            score: 25,
-            feedback: "Excellent problem-solving approach."
+            points: 25,
+            description: "Shows proper problem-solving approach"
           },
           {
             name: "Question 3",
-            score: 20,
-            feedback: "Solution works but could be more efficient."
+            points: 25,
+            description: "Implements solution correctly"
           },
           {
             name: "Overall",
-            score: 20,
-            feedback: "Well-organized submission with clear explanations."
+            points: 25,
+            description: "Organization and clarity"
           }
-        ],
-        general_feedback: "Good work overall. Your explanations are clear and your solutions work correctly. Consider focusing on efficiency and implementation details in future assignments."
+        ]
       };
 
-      setGrading(mockGrading);
+      // Call our internal API route
+      const response = await fetch('/api/grade-submission', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          submission,
+          rubric: mockRubric,
+          rubricId 
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to grade submission');
+      }
+
+      const data = await response.json();
+      setGrading(data);
     } catch (err) {
       setError('Failed to grade submission. Please try again.');
       console.error(err);
