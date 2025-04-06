@@ -2,44 +2,44 @@ import json
 import re
 import anthropic
 
-def get_questions_and_answers(text):
+def get_problem_numbers(questions_text, student_answers_text, answer_key_text):
     """
-    Extract questions and answers from OCR text using Claude.
+    Extract all problem numbers from the questions, student answers, and answer key.
     
     Args:
-        text (str): The OCR text from the PDF
+        questions_text (str): Text containing the problems/questions
+        student_answers_text (str): Text containing the student's answers
+        answer_key_text (str): Text containing the answer key
         
     Returns:
-        tuple: (questions_dict, answers_dict) containing the parsed data
+        list: Sorted list of unique problem numbers
     """
-    # Initialize the Anthropic client (API key should be set in the environment)
+    # Initialize the Anthropic client
     client = anthropic.Anthropic()
     
     # Create the prompt for Claude
     prompt = f"""
-    Parse this math worksheet OCR text into two dictionaries:
-    1. "questions": Maps IDs like "2.2.1" to full question text
-    2. "answers": Maps IDs to their answers
-
-    Guidelines:
-    - Use Unicode for math symbols
-    - Include all parts (a,b,c) with main questions
-    - Empty string for missing answers
-    - include FULL WORK IN ANSWER
-
-    Input text:
-    {text}
-
-    Return valid JSON with questions and answers dictionaries.
+    Extract all problem numbers from these three documents:
+    
+    QUESTIONS:
+    {questions_text}
+    
+    STUDENT ANSWERS:
+    {student_answers_text}
+    
+    ANSWER KEY:
+    {answer_key_text}
+    
+    Return only a JSON array of the problem numbers as strings. Example: ["1.1", "1.2", "2.1", "2.2"]
     """
     
     # Send request to Claude
     try:
         response = client.messages.create(
             model="claude-3-7-sonnet-20250219",
-            max_tokens=4000,
-            temperature=0,  # Use deterministic output for parsing
-            system="You are an expert in parsing educational content. You extract questions and answers from worksheets accurately, structuring them into JSON format. Use Unicode math symbols, not LaTeX.",
+            max_tokens=1000,
+            temperature=0,
+            system="You extract problem numbers from educational content. Return only a JSON array of problem numbers.",
             messages=[
                 {
                     "role": "user",
@@ -56,111 +56,196 @@ def get_questions_and_answers(text):
         # Extract JSON from Claude's response
         content = response.content[0].text
         
-        # Find JSON in the response using regex
+        # Find JSON array in the response using regex
+        json_match = re.search(r'(\[.*\])', content, re.DOTALL)
+        if json_match:
+            json_str = json_match.group(1)
+            problem_numbers = json.loads(json_str)
+            return sorted(problem_numbers)
+        else:
+            raise ValueError("Could not extract problem numbers from Claude's response")
+            
+    except Exception as e:
+        print(f"Error extracting problem numbers: {e}")
+        return []
+
+def generate_problem_json(problem_number, questions_text, student_answers_text, answer_key_text):
+    """
+    Generate a JSON entry for a specific problem.
+    
+    Args:
+        problem_number (str): The problem number to process
+        questions_text (str): Text containing the problems/questions
+        student_answers_text (str): Text containing the student's answers
+        answer_key_text (str): Text containing the answer key
+        
+    Returns:
+        dict: JSON entry for the problem
+    """
+    # Initialize the Anthropic client
+    client = anthropic.Anthropic()
+    
+    # Create the prompt for Claude
+    prompt = f"""
+    QUESTIONS:
+    {questions_text}
+    
+    STUDENT ANSWERS:
+    {student_answers_text}
+    
+    ANSWER KEY:
+    {answer_key_text}
+    
+    Return a JSON object with these fields:
+    1. "problem": The complete problem statement (including all parts)
+    2. "student_answer": The student's complete answer (or empty string if not found)
+    3. "answer_key": The complete answer from the answer key, including work (or empty string if not found)
+    
+    Example format:
+    {{
+      "problem": "Full problem text goes here...",
+      "student_answer": "Student's answer goes here...",
+      "answer_key": "Answer key solution goes here..."
+    }}
+    EXTRACT INFO FOR PROBLEM {problem_number}. MAKE SURE TO DO {problem_number}.
+    """
+    #print(f"PROMPT: {prompt}")
+    # Send request to Claude
+    try:
+        response = client.messages.create(
+            model="claude-3-7-sonnet-20250219",
+            max_tokens=2000,
+            temperature=0,
+            system="You extract problem information from educational content. Return a JSON object with problem, student_answer, and answer_key fields.",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": prompt
+                        }
+                    ]
+                }
+            ]
+        )
+        
+        # Extract JSON from Claude's response
+        content = response.content[0].text
+        
+        # Find JSON object in the response using regex
         json_match = re.search(r'({[\s\S]*})', content)
         if json_match:
             json_str = json_match.group(1)
-            result = json.loads(json_str)
-            
-            # Extract the questions and answers dictionaries
-            questions_dict = result.get("questions", {})
-            answers_dict = result.get("answers", {})
-            
-            return questions_dict, answers_dict
+            problem_data = json.loads(json_str)
+            return problem_data
         else:
-            raise ValueError("Could not extract JSON from Claude's response")
+            raise ValueError(f"Could not extract problem data for problem {problem_number} from Claude's response")
             
     except Exception as e:
-        print(f"Error parsing content with Claude: {e}")
-        return {}, {}
+        print(f"Error generating JSON for problem {problem_number}: {e}")
+        return {
+            "problem": "",
+            "student_answer": "",
+            "answer_key": ""
+        }
 
-def get_questions(text):
+def process_assessment(questions_text, student_answers_text, answer_key_text, output_file=None, specific_problems=None):
     """
-    Extract just the questions from OCR text.
+    Process an assessment and generate a complete JSON output.
     
     Args:
-        text (str): The OCR text from the PDF
+        questions_text (str): Text containing the problems/questions
+        student_answers_text (str): Text containing the student's answers
+        answer_key_text (str): Text containing the answer key
+        output_file (str, optional): Path to save the output JSON. If None, won't save to file. Defaults to None.
+        specific_problems (list, optional): List of specific problem numbers to process.
+            If None, all problems will be processed. Defaults to None.
         
     Returns:
-        dict: Mapping of question IDs to question text
+        dict: The complete assessment analysis data
     """
-    questions, _ = get_questions_and_answers(text)
-    return questions
-
-def get_answers(text):
-    """
-    Extract just the answers from OCR text.
+    # Get problem numbers (if not specified)
+    if specific_problems is None:
+        print("Extracting problem numbers...")
+        problem_numbers = get_problem_numbers(questions_text, student_answers_text, answer_key_text)
+        print(f"Found {len(problem_numbers)} problems: {', '.join(problem_numbers)}")
+    else:
+        problem_numbers = specific_problems
+        print(f"Processing {len(problem_numbers)} specified problems: {', '.join(problem_numbers)}")
     
-    Args:
-        text (str): The OCR text from the PDF
-        
-    Returns:
-        dict: Mapping of question IDs to answer text
-    """
-    _, answers = get_questions_and_answers(text)
-    return answers
-
-# Save to JSON file
-def save_to_json(questions, answers, output_file):
-    """Save questions and answers to a JSON file"""
-    # Create a combined data structure
-    data = {
-        "questions": questions,
-        "answers": answers,
-        "pairs": {}
+    # Process each problem
+    all_problems = {}
+    
+    for i, problem_number in enumerate(problem_numbers):
+        print(f"Processing problem {problem_number} ({i+1}/{len(problem_numbers)})...")
+        problem_data = generate_problem_json(
+            problem_number, 
+            questions_text, 
+            student_answers_text, 
+            answer_key_text
+        )
+        all_problems[problem_number] = problem_data
+    
+    # Assemble final JSON
+    import datetime
+    output_data = {
+        "metadata": {
+            "total_problems": len(problem_numbers),
+            "problem_numbers": problem_numbers,
+            "timestamp": datetime.datetime.now().isoformat()
+        },
+        "problems": all_problems
     }
     
-    # Create pairs for easier access
-    all_ids = sorted(set(list(questions.keys()) + list(answers.keys())))
-    for qid in all_ids:
-        data["pairs"][qid] = {
-            "question": questions.get(qid, ""),
-            "answer": answers.get(qid, "")
-        }
+    # Write to file if requested
+    if output_file:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(output_data, f, ensure_ascii=False, indent=2)
+        print(f"Assessment analysis saved to {output_file}")
     
-    # Write to file
-    with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    
-    return output_file
+    return output_data
 
-# Simple test
+# Test the implementation
 if __name__ == "__main__":
     try:
-        # Input and output files
-        input_file = "Weekly practice 1.txt"
-        output_file = "assessment_data.json"
+        # Define input and output files
+        questions_file = "Weekly practice 1.txt"
+        student_answers_file = "Weekly practice 1.txt"  # Using the same file for student answers for testing
+        answer_key_file = "weekly practice 1 answer key.txt"
+        output_file = "assessment_analysis.json"
         
-        # Load sample text from file
-        with open(input_file, "r") as f:
-            sample_text = f.read()
+        # Check if the required files exist
+        import os
+        for file_path in [questions_file, answer_key_file]:
+            if not os.path.exists(file_path):
+                print(f"Error: File '{file_path}' not found")
+                exit(1)
         
-        print(f"Parsing {input_file}...")
+        print(f"Using files:")
+        print(f"  Questions: {questions_file}")
+        print(f"  Student answers: {student_answers_file}")
+        print(f"  Answer key: {answer_key_file}")
         
-        # Get questions and answers
-        questions = get_questions(sample_text)
-        answers = get_answers(sample_text)
+        # Load input files
+        with open(questions_file, 'r') as f:
+            questions_text = f.read()
         
-        # Save to JSON file
-        saved_file = save_to_json(questions, answers, output_file)
-        print(f"\nSaved results to {saved_file}")
+        with open(student_answers_file, 'r') as f:
+            student_answers_text = f.read()
         
-        # Print summary
-        print(f"Found {len(questions)} questions and {len(answers)} answers")
+        with open(answer_key_file, 'r') as f:
+            answer_key_text = f.read()
         
-        # Print a sample of the data
-        print("\nSample data:")
-        all_ids = sorted(set(list(questions.keys()) + list(answers.keys())))
-        if all_ids:
-            sample_id = all_ids[0]
-            print(f"Question {sample_id}: {questions.get(sample_id, '[Not found]')[:80]}...")
-            print(f"Answer {sample_id}: {answers.get(sample_id, '[Not found]')[:80]}...")
+        # Process the assessment
+        results = process_assessment(
+            questions_text,
+            student_answers_text,
+            answer_key_text,
+            output_file
+        )
         
-        # Check if we found questions and answers
-        if len(questions) > 0 and len(answers) > 0:
-            print("\nTest PASSED: Successfully extracted questions and answers.")
-        else:
-            print("\nTest FAILED: Failed to extract questions or answers.")
-            
+        print("Test completed successfully!")
+        
     except Exception as e:
         print(f"Error in test: {e}")
