@@ -13,4 +13,12 @@ def create_app():
     from .api import routes as api_routes
     app.register_blueprint(api_routes.bp)
     
+    # Register new endpoints
+    try:
+        from .api import endpoints
+        app.register_blueprint(endpoints.bp)
+        print("Registered new endpoints successfully")
+    except Exception as e:
+        print(f"Error registering new endpoints: {e}")
+    
     return app
