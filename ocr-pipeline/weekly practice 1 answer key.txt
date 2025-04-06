@@ -1,0 +1,48 @@
+
+2.2.1: Three dice (red, blue, green), sum = 5
+- r, b, g ∈ {1, 2, 3, 4, 5, 6}, r + b + g = 5
+- r=1: b+g=4 → (1,1,3), (1,2,2), (1,3,1)
+- r=2: b+g=3 → (2,1,2), (2,2,1)
+- r=3: b+g=2 → (3,1,1)
+- r≥4: impossible
+Answer: (1,1,3), (1,2,2), (1,3,1), (2,1,2), (2,2,1), (3,1,1)
+
+2.2.2: Right triangles, hypotenuse = 5", legs a, b
+- a² + b² = 5² = 25
+- a > 0, b > 0
+Answer: { (a, b) | a² + b² = 25, a > 0, b > 0 }
+
+2.2.3: A ∩ B ∩ C
+- A = [0, 4], B = [2, 6], C = {0, 1, 2, ...}
+- A ∩ B = [2, 4]
+- A ∩ B ∩ C = [2, 4] ∩ {0, 1, 2, ...} = {2, 3, 4}
+Answer: {2, 3, 4}
+
+2.2.4: (A₁ ∪ A₂ ∪ ... ∪ Aₖ) ∪ (A₁ᶜ ∩ Aₖᶜ)
+- A₁ ∪ ... ∪ Aₖ: at least one event
+- A₁ᶜ ∩ Aₖᶜ: not in A₁ nor Aₖ
+- Union covers all ω ∈ S: if ω in some Aᵢ, included; if not, in A₁ᶜ ∩ Aₖᶜ
+Answer: S
+
+2.2.5: DeMorgan’s laws
+- (a) (A ∩ B)ᶜ: not both = Aᶜ ∪ Bᶜ (outside overlap)
+- (b) (A ∪ B)ᶜ: neither = Aᶜ ∩ Bᶜ (outside both)
+Answer: (a) (A ∩ B)ᶜ = Aᶜ ∪ Bᶜ  (b) (A ∪ B)ᶜ = Aᶜ ∩ Bᶜ
+
+2.3.1: P(A or B but not both), P(A) = 0.4, P(B) = 0.5, P(A ∩ B) = 0.1
+- P(A ∪ B) = 0.4 + 0.5 - 0.1 = 0.8
+- P(A or B but not both) = P(A ∪ B) - P(A ∩ B) = 0.8 - 0.1 = 0.7
+Answer: 0.7
+
+2.3.2: Venn diagrams
+- (a) P(A ∩ B) = P(B) → B ⊆ A (B inside A)
+- (b) P(A ∪ B) = P(B) → A ⊆ B (A inside B)
+Answer: (a) B ⊆ A  (b) A ⊆ B
+
+2.3.3: Two dice, P(outcome) = 1/36, A: sum = 6, B: one die twice other, find P(A ∩ Bᶜ)
+- A = {(1,5), (2,4), (3,3), (4,2), (5,1)}, |A| = 5
+- B = {(1,2), (2,4), (3,6), (2,1), (4,2), (6,3)}, |B| = 6
+- A ∩ B = {(2,4), (4,2)}, |A ∩ B| = 2
+- A ∩ Bᶜ = A \ B = {(1,5), (3,3), (5,1)}, |A ∩ Bᶜ| = 3
+- P(A ∩ Bᶜ) = 3/36
+Answer: 3/36

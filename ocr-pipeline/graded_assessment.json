@@ -1,0 +1,75 @@
+{
+  "metadata": {
+    "total_problems": 8,
+    "problem_numbers": [
+      "2.2.1",
+      "2.2.2",
+      "2.2.3",
+      "2.2.4",
+      "2.2.5",
+      "2.3.1",
+      "2.3.2",
+      "2.3.3"
+    ],
+    "timestamp": "2025-04-06T10:19:23.603439"
+  },
+  "problems": {
+    "2.2.1": {
+      "problem": "Three dice are tossed, one red, one blue, and one green. What outcomes make up the event \\( A \\) that the sum of the three faces showing equals 5?",
+      "student_answer": "(1,1,3)\n(1,2,2)\n(2,1,2)\n(1,3,1)\n(3,1,1)\n(2,2,1)",
+      "answer_key": "2.2.1: Three dice (red, blue, green), sum = 5\n- r, b, g \u2208 {1, 2, 3, 4, 5, 6}, r + b + g = 5\n- r=1: b+g=4 \u2192 (1,1,3), (1,2,2), (1,3,1)\n- r=2: b+g=3 \u2192 (2,1,2), (2,2,1)\n- r=3: b+g=2 \u2192 (3,1,1)\n- r\u22654: impossible\nAnswer: (1,1,3), (1,2,2), (1,3,1), (2,1,2), (2,2,1), (3,1,1)",
+      "grade_percentage": 100,
+      "feedback": ""
+    },
+    "2.2.2": {
+      "problem": "Let \\( P \\) be the set of right triangles with a 5\" hypotenuse and whose height and length are \\( a \\) and \\( b \\), respectively. Characterize the outcomes in \\( P \\).",
+      "student_answer": "\\(a^2 + b^2 = 5^2\\)\n\\( a^2 + b^2 = 25 \\)\n\n\\( a,b \\mid a^2 + b^2 = 25, a > 0, b > 0 \\)",
+      "answer_key": "2.2.2: Right triangles, hypotenuse = 5\", legs a, b\n- a\u00b2 + b\u00b2 = 5\u00b2 = 25\n- a > 0, b > 0\nAnswer: { (a, b) | a\u00b2 + b\u00b2 = 25, a > 0, b > 0 }",
+      "grade_percentage": 100,
+      "feedback": ""
+    },
+    "2.2.3": {
+      "problem": "Find \\( A \\cap B \\cap C \\) if \\( A = \\{ x : 0 \\le x \\le 4 \\} \\), \\( B = \\{ x : 2 \\le x \\le 6 \\} \\), and C = {x : x = 0,1,2,...}.",
+      "student_answer": "\\( A \\cap B = \\{ x : 2 \\leq x \\leq 4 \\} \\)\n\n\\( A \\cap B \\cap C = \\{ 2, 3, 4 \\} \\)",
+      "answer_key": "2.2.3: A \u2229 B \u2229 C\n- A = [0, 4], B = [2, 6], C = {0, 1, 2, ...}\n- A \u2229 B = [2, 4]\n- A \u2229 B \u2229 C = [2, 4] \u2229 {0, 1, 2, ...} = {2, 3, 4}\nAnswer: {2, 3, 4}",
+      "grade_percentage": 100,
+      "feedback": ""
+    },
+    "2.2.4": {
+      "problem": "Let A\u2081,A\u2082,...,A\u2096 be any set of events defined on a sample space S. What outcomes belong to the event (A\u2081 \u222a A\u2082 \u222a ... \u222a A\u2096) \u222a (A\u2081\u1d9c \u2229 A\u2096\u1d9c).",
+      "student_answer": "\\( A_1 \\cup A_2 \\ldots \\cup A_k \\) \\( V(A_i^c \\ldots \\cap A_k^c) = (A_i^c \\cap A_k^c) \\)",
+      "answer_key": "2.2.4: (A\u2081 \u222a A\u2082 \u222a ... \u222a A\u2096) \u222a (A\u2081\u1d9c \u2229 A\u2096\u1d9c)\n- A\u2081 \u222a ... \u222a A\u2096: at least one event\n- A\u2081\u1d9c \u2229 A\u2096\u1d9c: not in A\u2081 nor A\u2096\n- Union covers all \u03c9 \u2208 S: if \u03c9 in some A\u1d62, included; if not, in A\u2081\u1d9c \u2229 A\u2096\u1d9c\nAnswer: S",
+      "grade_percentage": 0,
+      "feedback": "The student's response contains notational errors and doesn't demonstrate understanding of the problem. The simplification and final answer are incorrect."
+    },
+    "2.2.5": {
+      "problem": "5. Let A and B be any two events. Use Venn diagrams to show that\n\n(a) the complement of their intersection is the union of their complements:\n(A \u2229 B)\u1d9c = A\u1d9c \u222a B\u1d9c\n(b) the complement of their union is the intersection of their complements: (A \u222a B)\u1d9c = A\u1d9c \u2229 B\u1d9c\n\n(These two results are known as DeMorgan's laws.)",
+      "student_answer": "5)  a  (A \u2229 B) \u0368 = A \u0368 \u222a B \u0368\n\nb  (A \u222a B) \u0368 = A \u0368 \u2229 B \u0368",
+      "answer_key": "2.2.5: DeMorgan's laws\n- (a) (A \u2229 B)\u1d9c: not both = A\u1d9c \u222a B\u1d9c (outside overlap)\n- (b) (A \u222a B)\u1d9c: neither = A\u1d9c \u2229 B\u1d9c (outside both)\nAnswer: (a) (A \u2229 B)\u1d9c = A\u1d9c \u222a B\u1d9c  (b) (A \u222a B)\u1d9c = A\u1d9c \u2229 B\u1d9c",
+      "grade_percentage": 20,
+      "feedback": "The student only restated the problem without providing any visual representations (Venn diagrams) or explanations."
+    },
+    "2.3.1": {
+      "problem": "Let \\(A\\) and \\(B\\) be any two events defined on S. Suppose that \\(P(A) = 0.4, P(B) = 0.5,\\) and \\(P(A \\cap B) = 0.1.\\) What is the probability that \\(A\\) or \\(B\\) but not both occur?",
+      "student_answer": "\ud835\udc43(\ud835\udc34)=0.4,\ud835\udc43(\ud835\udc35)=0.5, \ud835\udc43(\ud835\udc34\u2229\ud835\udc35)=0.1\n\n\ud835\udc43(\ud835\udc34\u222a\ud835\udc35)=\ud835\udc43(\ud835\udc34)+\ud835\udc43(\ud835\udc35)\u2212\ud835\udc43(\ud835\udc34\u2229\ud835\udc35)=0.4+0.5\u22120.1\n0.8\n\ud835\udc43(\ud835\udc34\u222a\ud835\udc35)\u2212\ud835\udc43(\ud835\udc34\u2229\ud835\udc35)=\\boxed{0.7}",
+      "answer_key": "2.3.1: P(A or B but not both), P(A) = 0.4, P(B) = 0.5, P(A \u2229 B) = 0.1\n- P(A \u222a B) = 0.4 + 0.5 - 0.1 = 0.8\n- P(A or B but not both) = P(A \u222a B) - P(A \u2229 B) = 0.8 - 0.1 = 0.7\nAnswer: 0.7",
+      "grade_percentage": 100,
+      "feedback": ""
+    },
+    "2.3.2": {
+      "problem": "2. Draw the Venn diagrams that would correspond to the equations (a) \\(P(A \\cap B) = P(B)\\) and (b) \\(P(A \\cup B) = P(B)\\).",
+      "student_answer": "",
+      "answer_key": "2.3.2: Venn diagrams\n- (a) P(A \u2229 B) = P(B) \u2192 B \u2286 A (B inside A)\n- (b) P(A \u222a B) = P(B) \u2192 A \u2286 B (A inside B)\nAnswer: (a) B \u2286 A  (b) A \u2286 B",
+      "grade_percentage": 100,
+      "feedback": ""
+    },
+    "2.3.3": {
+      "problem": "Two dice are tossed. Assume that each possible outcome has a \\(\\frac{1}{36}\\) probability. Let A be the event that the sum of the faces showing is 6, and let B be the event that the face showing on one die is twice the face showing on the other. Calculate \\(P(A \\cap B^c )\\).",
+      "student_answer": "A: a+b=6  \nB: 2a=b\n\n(1,5)  \n2,4  \n3,3  \n4,2  \n(5,1)\n\n\\(\\frac{3}{36}\\)",
+      "answer_key": "Two dice, P(outcome) = 1/36, A: sum = 6, B: one die twice other, find P(A \u2229 B\u1d9c)\n- A = {(1,5), (2,4), (3,3), (4,2), (5,1)}, |A| = 5\n- B = {(1,2), (2,4), (3,6), (2,1), (4,2), (6,3)}, |B| = 6\n- A \u2229 B = {(2,4), (4,2)}, |A \u2229 B| = 2\n- A \u2229 B\u1d9c = A \\ B = {(1,5), (3,3), (5,1)}, |A \u2229 B\u1d9c| = 3\n- P(A \u2229 B\u1d9c) = 3/36\nAnswer: 3/36",
+      "grade_percentage": 60,
+      "feedback": "You correctly identified the outcomes in event A, but failed to fully account for event B and thus miscalculated the intersection and the final probability."
+    }
+  },
+  "overall_score": 72.5
+}
