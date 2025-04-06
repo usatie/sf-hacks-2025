@@ -490,58 +490,74 @@ def auto_grade_submission(submission_id):
     # For demo, we'll use a fixed student variation (0, 1, or 2)
     student_variation = int(submission_id[-1]) % 3
     
-    # Mock graded answers
+    # Get assignment details
+    if assignment_id not in assignment_details:
+        return jsonify({'error': 'Assignment not found'}), 404
+    
+    assignment = assignment_details[assignment_id]
+    
+    # Build grades for all questions in the assignment
+    all_grades = []
+    total_score = 0
+    max_score = 0
+    
+    for question in assignment["questions"]:
+        # Default to a correct answer for most questions
+        is_correct = True
+        
+        # Introduce variation based on student_id and question
+        # For simplicity, just make a few specific questions incorrect for certain students
+        if question["id"] == "q3" and student_variation == 0:
+            is_correct = False
+        elif question["id"] == "q10" and student_variation == 2:
+            is_correct = False
+        elif question["id"] == "q11" and student_variation == 1:
+            is_correct = False
+            
+        # Calculate score and build response
+        question_score = 1 if is_correct else 0
+        
+        # Create appropriate mock student answer
+        student_answer = ""
+        if question.get("answerType") == "multiple-choice":
+            options = question.get("options", [])
+            if options:
+                # Find the correct option or the first incorrect one if we're simulating a wrong answer
+                if is_correct:
+                    correct_option = next((opt for opt in options if opt.get("isCorrect")), options[0])
+                    student_answer = f"{chr(65 + options.index(correct_option))}. {correct_option.get('text', '')}"
+                else:
+                    incorrect_option = next((opt for opt in options if not opt.get("isCorrect")), options[0])
+                    student_answer = f"{chr(65 + options.index(incorrect_option))}. {incorrect_option.get('text', '')}"
+        elif question.get("answerType") == "numerical":
+            # Format numerical answers slightly differently for some students
+            expected = question.get("expectedAnswer", "0")
+            student_answer = expected + ".0" if student_variation == 1 and is_correct else expected
+                
+        # Build the grade object
+        grade = {
+            "questionId": question["id"],
+            "score": question_score,
+            "maxScore": 1,  # For simplicity, each question is worth 1 point
+            "studentAnswer": student_answer,
+            "isCorrect": is_correct,
+            "appliedCriteria": [
+                {"id": "a1", "text": "Correct answer selected", "points": 1, "applied": is_correct}
+            ],
+            "deductionCriteria": [],
+            "feedback": "Correct answer!" if is_correct else "Incorrect answer. Please review this question.",
+            "isAutoGraded": True
+        }
+        
+        all_grades.append(grade)
+        total_score += question_score
+        max_score += 1
+    
+    # Mock graded answers with full coverage
     mock_grades = {
-        "grades": [
-            # Q1: Numerical answer - correct but with slight format difference for some students
-            {
-                "questionId": "q1",
-                "score": 1,
-                "maxScore": 1,
-                "studentAnswer": "6.0" if student_variation == 1 else "6",
-                "isCorrect": True,
-                "appliedCriteria": [
-                    {"id": "a1", "text": "Correct answer", "points": 1, "applied": True}
-                ],
-                "deductionCriteria": [],
-                "feedback": "Correct answer!",
-                "isAutoGraded": True,
-            },
-            
-            # Q2: Multiple choice - all correct
-            {
-                "questionId": "q2",
-                "score": 1,
-                "maxScore": 1,
-                "studentAnswer": "B. a=4, b=1",
-                "isCorrect": True,
-                "appliedCriteria": [
-                    {"id": "a1", "text": "Correct answer selected", "points": 1, "applied": True}
-                ],
-                "deductionCriteria": [],
-                "feedback": "Correct selection!",
-                "isAutoGraded": True,
-            },
-            
-            # Q3: Multiple choice - some students get it wrong
-            {
-                "questionId": "q3",
-                "score": 0 if student_variation == 0 else 1,
-                "maxScore": 1,
-                "studentAnswer": "A. True" if student_variation == 0 else "B. False",
-                "isCorrect": student_variation != 0,
-                "appliedCriteria": [
-                    {"id": "a1", "text": "Correct answer selected", "points": 1, "applied": student_variation != 0}
-                ],
-                "deductionCriteria": [],
-                "feedback": "Incorrect. Remember that only the training set will have mean=0 and std=1 after standardization. The test set will have different statistics." if student_variation == 0 else "Correct! Standardization ensures the training set has mean=0 and std=1, but the test set will have different statistics.",
-                "isAutoGraded": True,
-            },
-            
-            # Only showing 3 questions for brevity
-        ],
-        "totalScore": 2 if student_variation == 0 else 3,
-        "maxScore": 3  # Only counting first 3 questions for brevity
+        "grades": all_grades,
+        "totalScore": total_score,
+        "maxScore": max_score
     }
     
     return jsonify(mock_grades)
