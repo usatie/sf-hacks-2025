@@ -1,0 +1,84 @@
+{
+  "questions": [
+    {
+      "id": 1,
+      "type": "numerical",
+      "question_box": [
+        5,
+        10,
+        95,
+        20
+      ],
+      "answer_box": [
+        25,
+        18,
+        35,
+        22
+      ]
+    },
+    {
+      "id": 2,
+      "type": "multiple-choice",
+      "question_box": [
+        5,
+        22,
+        95,
+        32
+      ],
+      "answer_box": [
+        5,
+        30,
+        15,
+        34
+      ]
+    },
+    {
+      "id": 3,
+      "type": "multiple-choice",
+      "question_box": [
+        5,
+        34,
+        95,
+        44
+      ],
+      "answer_box": [
+        5,
+        42,
+        15,
+        46
+      ]
+    },
+    {
+      "id": 4,
+      "type": "multiple-choice",
+      "question_box": [
+        5,
+        46,
+        95,
+        56
+      ],
+      "answer_box": [
+        5,
+        54,
+        15,
+        58
+      ]
+    },
+    {
+      "id": 5,
+      "type": "multiple-choice",
+      "question_box": [
+        5,
+        58,
+        95,
+        68
+      ],
+      "answer_box": [
+        5,
+        66,
+        15,
+        70
+      ]
+    }
+  ]
+}
