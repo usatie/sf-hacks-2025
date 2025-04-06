@@ -76,9 +76,27 @@ def segment_image(image, target_height=TARGET_HEIGHT, min_height=MIN_HEIGHT):
     
     return image_segments, segments
 
-# Save segments function removed - not saving individual slices
+# Function to save image segments
+def save_segments(image_segments, page_num, output_dir=IMAGE_DIR):
+    """Save image segments to disk for visualization"""
+    # Create output directory if it doesn't exist
+    segments_dir = os.path.join(output_dir, f"segments_p{page_num}")
+    os.makedirs(segments_dir, exist_ok=True)
+    
+    # Save each segment
+    saved_paths = []
+    for i, segment in enumerate(image_segments):
+        # Create filename with page and segment numbers
+        segment_path = os.path.join(segments_dir, f"segment_{i+1}.png")
+        
+        # Save the image
+        segment.save(segment_path, "PNG")
+        print(f"  Saved segment {i+1} to {segment_path}")
+        saved_paths.append(segment_path)
+    
+    return saved_paths
 
-def pdf_to_text_segmented():
+def pdf_to_text_segmented(save_segments_to_disk=True):
     """PDF to text extraction using GPT-4o vision with image segmentation"""
     
     # Check for API key in file first, then environment
@@ -124,7 +142,10 @@ def pdf_to_text_segmented():
         image_segments, segment_coords = segment_image(image)
         print(f"  Created {len(image_segments)} segments")
         
-        # Skip saving segments to disk
+        # Save segments to disk if requested
+        if save_segments_to_disk:
+            save_segments(image_segments, i+1)
+        
         print(f"  Processing {len(image_segments)} segments")
         
         # Process each segment
@@ -177,4 +198,4 @@ def pdf_to_text_segmented():
     print(f"All text extracted to {OUTPUT_FILE}")
 
 if __name__ == "__main__":
-    pdf_to_text_segmented()
+    pdf_to_text_segmented(save_segments_to_disk=True)

@@ -1,10 +1,11 @@
 import json
-import anthropic
 import os
+import re
+import google.generativeai as genai
 
 def grade_problem(problem_data):
     """
-    Grade a single problem using Claude.
+    Grade a single problem using Gemini.
     
     Args:
         problem_data (dict): Problem data containing problem, student_answer, and answer_key
@@ -12,15 +13,16 @@ def grade_problem(problem_data):
     Returns:
         tuple: (percentage, feedback)
     """
-    # Initialize the Anthropic client
-    client = anthropic.Anthropic()
+    # Configure the Gemini API
+    api_key = os.environ.get("GEMINI_API_KEY")
+    genai.configure(api_key=api_key)
     
     # Extract problem components
     problem = problem_data.get("problem", "")
     student_answer = problem_data.get("student_answer", "")
     answer_key = problem_data.get("answer_key", "")
     
-    # Create the prompt for Claude
+    # Create the prompt for Gemini
     prompt = f"""
     PROBLEM:
     {problem}
@@ -42,31 +44,17 @@ def grade_problem(problem_data):
     }}
     """
     
-    # Send request to Claude
+    # Get a model instance
+    model = genai.GenerativeModel('gemini-2.0-flash')
+    
+    # Send request to Gemini
     try:
-        response = client.messages.create(
-            model="claude-3-7-sonnet-20250219",
-            max_tokens=500,
-            temperature=0,
-            system="You are a math grader. Grade student answers with a percentage and provide brief feedback only when points are deducted.",
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": prompt
-                        }
-                    ]
-                }
-            ]
-        )
+        response = model.generate_content(prompt)
         
-        # Extract JSON from Claude's response
-        content = response.content[0].text
+        # Extract JSON from Gemini's response
+        content = response.text
         
         # Find JSON in the response using regex
-        import re
         json_match = re.search(r'({[\s\S]*})', content)
         if json_match:
             json_str = json_match.group(1)
@@ -133,9 +121,9 @@ def grade_assessment(assessment_file, output_file="graded_assessment.json"):
 # Test grading
 if __name__ == "__main__":
     # Check if API key is set
-    if "ANTHROPIC_API_KEY" not in os.environ:
-        print("Error: ANTHROPIC_API_KEY environment variable not set")
-        print("Please set your API key with: export ANTHROPIC_API_KEY=your_key_here")
+    if "GEMINI_API_KEY" not in os.environ:
+        print("Error: GEMINI_API_KEY environment variable not set")
+        print("Please set your API key with: export GEMINI_API_KEY=your_key_here")
         exit(1)
     
     # Check if input file exists
