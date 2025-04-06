@@ -3,32 +3,35 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, FileText, CheckSquare } from "lucide-react"
 import type { Metadata } from "next"
+import { API_URL } from "@/config"
 
 export const metadata: Metadata = {
   title: "Assignments | GradeAssist",
   description: "Manage your assignments and grading",
 }
 
-export default function AssignmentsPage() {
-  // Mock data for assignments
-  const assignments = [
-    {
-      id: "123",
-      title: "CSC 671 - Deep Learning Midterm Exam",
-      description: "Midterm exam covering neural networks, backpropagation, CNNs, and other deep learning concepts",
-      questions: 15,
-      totalPoints: 25,
-      createdAt: "2023-10-15",
-    },
-    {
-      id: "456",
-      title: "MATH 301 - Calculus Quiz",
-      description: "Quiz on derivatives and integrals",
-      questions: 8,
-      totalPoints: 16,
-      createdAt: "2023-10-10",
-    },
-  ]
+async function getAssignments() {
+  try {
+    const response = await fetch(`${API_URL}/assignments`, {
+      cache: 'no-store' // Don't cache this request
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.assignments;
+  } catch (error) {
+    console.error("Failed to fetch assignments:", error);
+    // Return empty array in case of error
+    return [];
+  }
+}
+
+export default async function AssignmentsPage() {
+  // Fetch assignments from the API
+  const assignments = await getAssignments();
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl mx-auto">
