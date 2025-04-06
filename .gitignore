@@ -61,3 +61,6 @@ yarn-debug.log*
 yarn-error.log*
 
 pdf_images/
+
+# API key
+api_key.txt
