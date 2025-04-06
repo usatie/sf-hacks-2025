@@ -49,51 +49,112 @@ export default function GradingResults({
 
   // Initialize grades based on automatic grading
   useEffect(() => {
-    if (submission && assignment) {
-      const initialGrades = assignment.questions.map((question: any) => {
-        const studentAnswer = submission.answers.find((a: any) => a.questionId === question.id)
+    const autoGradeSubmission = async () => {
+      if (submission && assignment) {
+        try {
+          // Check if we should use the API or local grading
+          const { API_URL } = await import('@/config');
+          // Start with loading state
+          const loadingGrades = assignment.questions.map((question: any) => {
+            // Ensure rubric and its properties exist
+            const rubric = question.rubric || { additionCriteria: [], deductionCriteria: [] };
+            const additionCriteria = rubric.additionCriteria || [];
+            
+            return {
+              questionId: question.id,
+              score: 0,
+              maxScore: additionCriteria.reduce((sum: number, c: any) => sum + (c.points || 0), 0),
+              studentAnswer: "Grading in progress...",
+              appliedCriteria: [],
+              deductionCriteria: [],
+              feedback: "Auto-grading in progress...",
+              isAutoGraded: false,
+            };
+          });
+          
+		  console.log("Loading grades:", loadingGrades);
+          setGrades(loadingGrades);
+          
+          // Call the auto-grading API
+          const response = await fetch(`${API_URL}/submissions/${submission.id}/auto-grade`, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              assignmentId: assignment.id,
+              answers: submission.answers
+            })
+          });
+          
+          if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+          }
+          
+          const gradeData = await response.json();
+          
+          // Update grades with API response
+          setGrades(gradeData.grades);
+          setTotalScore(gradeData.totalScore);
+        } catch (error) {
+          console.error("Error during auto-grading:", error);
+          
+          // Fallback to local grading if API fails
+          const fallbackGrades = assignment.questions.map((question: any) => {
+            const studentAnswer = submission.answers.find((a: any) => a.questionId === question.id)
+            const isCorrect = studentAnswer?.isCorrect || false
+            
+            // Ensure rubric and its properties exist
+            const rubric = question.rubric || { additionCriteria: [], deductionCriteria: [] };
+            const additionCriteria = rubric.additionCriteria || [];
+            const deductionCriteriaBase = rubric.deductionCriteria || [];
+            
+            const appliedCriteria = isCorrect
+              ? additionCriteria.map((c: any) => ({ ...c, applied: true }))
+              : additionCriteria.map((c: any) => ({ ...c, applied: false }))
+            
+            const deductionCriteria = deductionCriteriaBase.map((c: any) => ({ ...c, applied: false }))
+            
+            const initialScore = calculateScoreFromCriteria(appliedCriteria, deductionCriteria)
+            const maxPossibleScore = additionCriteria.reduce((sum: number, c: any) => sum + (c.points || 0), 0)
 
-        // Determine if the answer is correct
-        const isCorrect = studentAnswer?.isCorrect || false
+            return {
+              questionId: question.id,
+              score: initialScore,
+              maxScore: maxPossibleScore,
+              studentAnswer: studentAnswer?.answer || "No answer provided",
+              appliedCriteria,
+              deductionCriteria,
+              feedback: isCorrect ? "Correct answer" : "Incorrect answer (API error, using local grading)",
+              isAutoGraded: true,
+            }
+          });
 
-        // Set up addition criteria with applied status based on correctness
-        const appliedCriteria = isCorrect
-          ? question.rubric.additionCriteria.map((c: any) => ({ ...c, applied: true }))
-          : question.rubric.additionCriteria.map((c: any) => ({ ...c, applied: false }))
-
-        // Include deduction criteria (none applied initially)
-        const deductionCriteria = question.rubric.deductionCriteria
-          ? question.rubric.deductionCriteria.map((c: any) => ({ ...c, applied: false }))
-          : []
-
-        // Calculate initial score based on applied criteria
-        const initialScore = calculateScoreFromCriteria(appliedCriteria, deductionCriteria)
-
-        // Calculate max possible score from addition criteria
-        const maxPossibleScore = question.rubric.additionCriteria.reduce((sum: number, c: any) => sum + c.points, 0)
-
-        return {
-          questionId: question.id,
-          score: initialScore,
-          maxScore: maxPossibleScore,
-          studentAnswer: studentAnswer?.answer || "No answer provided",
-          appliedCriteria,
-          deductionCriteria,
-          feedback: isCorrect ? "Correct answer" : "Incorrect answer",
-          isAutoGraded: true,
+          setGrades(fallbackGrades);
+          const total = fallbackGrades.reduce((sum, grade) => sum + grade.score, 0);
+          setTotalScore(total);
         }
-      })
+      }
+    };
 
-      setGrades(initialGrades)
-
-      // Calculate total score
-      const total = initialGrades.reduce((sum, grade) => sum + grade.score, 0)
-      setTotalScore(total)
-    }
-  }, [submission, assignment])
+    autoGradeSubmission();
+  }, [submission, assignment, calculateScoreFromCriteria])
 
   const calculateQuestionScore = (questionIndex: number, grades: any[]) => {
-    return calculateScoreFromCriteria(grades[questionIndex].appliedCriteria, grades[questionIndex].deductionCriteria)
+    // Safety check for score calculation
+    
+    // Safety check
+    if (!grades[questionIndex]) {
+      console.error(`No grade data found for question index ${questionIndex}`);
+      return 0;
+    }
+    
+    const grade = grades[questionIndex];
+    const appliedCriteria = grade.appliedCriteria || [];
+    const deductionCriteria = grade.deductionCriteria || [];
+    
+    return calculateScoreFromCriteria(appliedCriteria, deductionCriteria);
   }
 
   const handleCriteriaToggle = (
@@ -103,12 +164,30 @@ export default function GradingResults({
   ) => {
     setGrades((prev) => {
       const newGrades = [...prev]
-
+      
+      // Safety checks for toggle operation
+      
+      // Add safety checks
+      if (!newGrades[questionIndex]) {
+        console.error(`No grade data found for question index ${questionIndex}`);
+        return prev;
+      }
+      
       // Get the appropriate criteria array based on type
-      const criteriaArray =
-        criteriaType === "addition"
-          ? newGrades[questionIndex].appliedCriteria
-          : newGrades[questionIndex].deductionCriteria
+      const criteriaArray = criteriaType === "addition"
+        ? newGrades[questionIndex].appliedCriteria
+        : newGrades[questionIndex].deductionCriteria
+        
+      // More safety checks
+      if (!criteriaArray) {
+        console.error(`No criteria array found for ${criteriaType} criteria`);
+        return prev;
+      }
+      
+      if (!criteriaArray[criteriaIndex]) {
+        console.error(`No criteria found at index ${criteriaIndex}`);
+        return prev;
+      }
 
       const criteria = criteriaArray[criteriaIndex]
 
@@ -129,10 +208,18 @@ export default function GradingResults({
   const handleScoreChange = (questionIndex: number, newScore: number) => {
     setGrades((prev) => {
       const newGrades = [...prev]
+      
+      // Safety check for missing data
 
       // Get max possible score from addition criteria
+      // Add a safety check
+      if (!newGrades[questionIndex] || !newGrades[questionIndex].appliedCriteria) {
+        console.error(`No grade data or criteria found for index ${questionIndex}`);
+        return prev; // Return unchanged state
+      }
+      
       const maxPossibleScore = newGrades[questionIndex].appliedCriteria.reduce(
-        (sum: number, c: any) => sum + c.points,
+        (sum: number, c: any) => sum + (c?.points || 0),
         0,
       )
 
@@ -210,7 +297,7 @@ export default function GradingResults({
 
       <div className="space-y-6">
         {assignment.questions.map((question: any, questionIndex: number) => {
-          const grade = grades[questionIndex]
+          const grade = grades[questionIndex];
           const studentAnswer = submission.answers.find((a: any) => a.questionId === question.id)
 
           const isCorrect = studentAnswer?.isCorrect || false
