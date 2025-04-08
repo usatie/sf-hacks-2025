@@ -87,7 +87,7 @@ def extract_text_from_images(images, client=None, save_segments_to_disk=False):
         client = get_openai_client()
     
     prompt = """
-    Do OCR on this image. OUTPUT NOTHING ELSE. Use Unicode math symbols if applicable. If no text, return empty string.
+    Do OCR on this image. OUTPUT NOTHING ELSE. Use Unicode math symbols if applicable. DO NOT USE LATEX. If no text, return empty string.
     """
     
     all_text = []
@@ -159,9 +159,8 @@ def pdf_to_text(pdf_path, save_segments=False, save_text=False, output_file=None
     client = get_openai_client()
     all_text = extract_text_from_images(images, client, save_segments)
     
-    formatted_text = ""
-    for i, text in enumerate(all_text):
-        formatted_text += f"--- Page {i+1} ---\n{text}\n\n"
+    # Join all text with double newlines between pages, no page markers
+    formatted_text = "\n\n".join(all_text)
     
     if save_text:
         if output_file is None:
@@ -173,6 +172,4 @@ def pdf_to_text(pdf_path, save_segments=False, save_text=False, output_file=None
     return formatted_text
 
 if __name__ == "__main__":
-    fire.Fire({
-        "extract": pdf_to_text
-    })
+    fire.Fire(pdf_to_text)

@@ -39,7 +39,7 @@ Arguments:
 #### 1. Extract Text from PDF
 
 ```
-python pdf_to_text.py extract "Weekly practice 1.pdf" --save_segments=True --save_text=True
+python pdf_to_text.py "Weekly practice 1.pdf" --save_segments=True --save_text=True
 ```
 
 #### 2. Generate Assessment Analysis
