@@ -4,7 +4,7 @@ import io
 import numpy as np
 from PIL import Image
 from openai import OpenAI
-from convert_pdf import pdf_to_images
+from pdf_to_image import pdf_to_images
 import fire
 from dotenv import load_dotenv
 

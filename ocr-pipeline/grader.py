@@ -2,27 +2,28 @@ import json
 import os
 import re
 import google.generativeai as genai
+import fire
+from dotenv import load_dotenv
+from pprint import pprint
 
-def grade_problem(problem_data):
-    """
-    Grade a single problem using Gemini.
-    
-    Args:
-        problem_data (dict): Problem data containing problem, student_answer, and answer_key
-    
-    Returns:
-        tuple: (percentage, feedback)
-    """
-    # Configure the Gemini API
+# Load environment variables from .env file
+load_dotenv()
+
+def configure_gemini():
     api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("No Gemini API key found in environment variables")
     genai.configure(api_key=api_key)
+    return genai.GenerativeModel('gemini-2.5-pro-exp-03-25')
+
+def grade_problem(problem_data, model=None):
+    if model is None:
+        model = configure_gemini()
     
-    # Extract problem components
     problem = problem_data.get("problem", "")
     student_answer = problem_data.get("student_answer", "")
     answer_key = problem_data.get("answer_key", "")
     
-    # Create the prompt for Gemini
     prompt = f"""
     PROBLEM:
     {problem}
@@ -44,17 +45,10 @@ def grade_problem(problem_data):
     }}
     """
     
-    # Get a model instance
-    model = genai.GenerativeModel('gemini-2.0-flash')
-    
-    # Send request to Gemini
     try:
         response = model.generate_content(prompt)
-        
-        # Extract JSON from Gemini's response
         content = response.text
         
-        # Find JSON in the response using regex
         json_match = re.search(r'({[\s\S]*})', content)
         if json_match:
             json_str = json_match.group(1)
@@ -66,71 +60,116 @@ def grade_problem(problem_data):
     except Exception as e:
         return 0, f"Error grading problem: {str(e)}"
 
-def grade_assessment(assessment_file, output_file="graded_assessment.json"):
-    """
-    Grade all problems in an assessment and save the results.
+def grade_assessment_data(assessment_data, save_output=False, output_file="graded_assessment.json"):
+    model = configure_gemini()
     
-    Args:
-        assessment_file (str): Path to the assessment analysis JSON file
-        output_file (str): Path to save the graded assessment
-        
-    Returns:
-        dict: The graded assessment data
-    """
-    # Load assessment data
-    with open(assessment_file, 'r') as f:
-        assessment_data = json.load(f)
-    
-    # Get problems
     problems = assessment_data.get("problems", {})
     total_problems = len(problems)
     
     print(f"Grading {total_problems} problems...")
     
-    # Grade each problem
     total_score = 0
     
     for i, (problem_id, problem_data) in enumerate(problems.items()):
         print(f"Grading problem {problem_id} ({i+1}/{total_problems})...")
         
-        # Grade the problem
-        percentage, feedback = grade_problem(problem_data)
+        percentage, feedback = grade_problem(problem_data, model)
         
-        # Add grading to problem data
         problem_data["grade_percentage"] = percentage
         problem_data["feedback"] = feedback
         
-        # Update total score
         total_score += percentage
     
-    # Add overall score
     if total_problems > 0:
         assessment_data["overall_score"] = total_score / total_problems
     else:
         assessment_data["overall_score"] = 0
     
-    # Save graded assessment
-    with open(output_file, 'w') as f:
-        json.dump(assessment_data, f, indent=2)
+    if save_output:
+        with open(output_file, 'w') as f:
+            json.dump(assessment_data, f, indent=2)
+        print(f"Results saved to {output_file}")
+        
+        # Print formatted JSON to the console
+        print("\nGraded Assessment Results:")
+        print(json.dumps(assessment_data, indent=4, sort_keys=True))
     
     print(f"Grading complete! Overall score: {assessment_data['overall_score']:.2f}%")
-    print(f"Results saved to {output_file}")
     
     return assessment_data
 
-# Test grading
+def grade_assessment_file(assessment_file, output_file="graded_assessment.json"):
+    with open(assessment_file, 'r') as f:
+        assessment_data = json.load(f)
+    
+    return grade_assessment_data(assessment_data, True, output_file)
+
+def grade_pdf(pdf_path, answer_key_path, save_intermediate=False, output_file="graded_assessment.json"):
+    from assessment_parser import parse_pdf_to_assessment
+    
+    print(f"Processing PDF assessment: {pdf_path}")
+    print(f"Using answer key: {answer_key_path}")
+    
+    assessment_data = parse_pdf_to_assessment(
+        pdf_path, 
+        answer_key_path, 
+        save_intermediate
+    )
+    
+    if assessment_data:
+        output = output_file if save_intermediate else None
+        return grade_assessment_data(
+            assessment_data, 
+            save_intermediate, 
+            output
+        )
+    else:
+        print("Error: Failed to parse assessment from PDF")
+        return None
+
+def check_environment():
+    required_keys = {
+        "OPENAI_API_KEY": "for GPT-4o OCR",
+        "ANTHROPIC_API_KEY": "for Claude assessment parsing",
+        "GEMINI_API_KEY": "for Gemini grading"
+    }
+    
+    missing_keys = []
+    for key, purpose in required_keys.items():
+        if not os.environ.get(key):
+            missing_keys.append(f"{key} {purpose}")
+    
+    if missing_keys:
+        print("Error: Missing required API keys:")
+        for key in missing_keys:
+            print(f"  - {key}")
+        print("\nPlease add these API keys to your .env file.")
+        print("You can copy .env.example to .env and fill in your API keys.")
+        return False
+    
+    return True
+
+def process_pdf_assessment(pdf_path, answer_key_path, save_intermediate=False, output_file="graded_assessment.json"):
+    """
+    Complete end-to-end pipeline: PDF → Text → Assessment Analysis → Grading
+    
+    Args:
+        pdf_path: Path to the PDF assessment file
+        answer_key_path: Path to the answer key text file
+        save_intermediate: Whether to save intermediate results to files
+        output_file: Where to save the final graded assessment JSON
+        
+    Returns:
+        dict: Graded assessment results
+    """
+    if not check_environment():
+        return None
+        
+    return grade_pdf(pdf_path, answer_key_path, save_intermediate, output_file)
+
 if __name__ == "__main__":
-    # Check if API key is set
-    if "GEMINI_API_KEY" not in os.environ:
-        print("Error: GEMINI_API_KEY environment variable not set")
-        print("Please set your API key with: export GEMINI_API_KEY=your_key_here")
-        exit(1)
-    
-    # Check if input file exists
-    input_file = "assessment_analysis.json"
-    if not os.path.exists(input_file):
-        print(f"Error: {input_file} not found")
-        exit(1)
-    
-    # Grade the assessment
-    grade_assessment(input_file)
+    fire.Fire({
+        "grade_file": grade_assessment_file,
+        "grade_pdf": grade_pdf,
+        "process": process_pdf_assessment
+    })
